@@ -14,7 +14,9 @@ ENTITY proc IS
 		  rd_io 	: in  std_logic_vector(15 downto 0);
 		  wr_out 	: out std_logic;
 		  rd_in 	: out std_logic;
-		  etapa     : out std_logic_vector( 1 downto 0));
+		  etapa     : out std_logic_vector( 1 downto 0);
+		  intr      : in  std_logic;
+		  inta      : out std_logic);
 END proc;
 
 ARCHITECTURE Structure OF proc IS
@@ -25,6 +27,7 @@ ARCHITECTURE Structure OF proc IS
 				z		    : IN  STD_LOGIC;
 				aluout		: IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
 				int_hab		: IN  STD_LOGIC;
+                intr        : IN  STD_LOGIC;
 				op        	: OUT STD_LOGIC_VECTOR( 6 DOWNTO 0);
 				wrd       	: OUT STD_LOGIC;
 				addr_a    	: OUT STD_LOGIC_VECTOR( 2 DOWNTO 0);
@@ -46,7 +49,8 @@ ARCHITECTURE Structure OF proc IS
 				a_sys		: OUT STD_LOGIC;
 				es_reti		: OUT STD_LOGIC;
 				c_system	: OUT STD_LOGIC;
-				etapa       : OUT STD_LOGIC_VECTOR( 1 DOWNTO 0););
+				etapa       : OUT STD_LOGIC_VECTOR( 1 DOWNTO 0);
+                inta        : OUT STD_LOGIC);
 	end component;
 	
 	component datapath
@@ -131,7 +135,9 @@ BEGIN
 			a_sys => a_sys_fromuc,
 			wrd_sys => wrd_sys_fromuc,
 			es_reti => es_reti_fromuc,
-			etapa => etapa);
+			etapa => etapa,
+            inta => inta,
+            intr => intr);
 	
 	dp : datapath
 		port map(

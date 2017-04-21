@@ -30,66 +30,71 @@ ENTITY sisa IS
 END sisa;
 
 ARCHITECTURE Structure OF sisa IS
-	component proc
-		port (	clk       : IN  STD_LOGIC;
-				boot      : IN  STD_LOGIC;
-				datard_m  : IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
-				addr_m    : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
-				data_wr   : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
-				wr_m      : OUT STD_LOGIC;
-				word_byte : OUT STD_LOGIC;
-				addr_io	  : out std_logic_vector(7 downto 0);
-				wr_io 	  : out std_logic_vector(15 downto 0);
-				rd_io 	  : in  std_logic_vector(15 downto 0);
-				wr_out 	  : out std_logic;
-				rd_in 	  : out std_logic);
-	end component;
-	
-	component MemoryController
-		port (clk  : in  std_logic;
-	      addr      : in  std_logic_vector(15 downto 0);
-          wr_data   : in  std_logic_vector(15 downto 0);
-          rd_data   : out std_logic_vector(15 downto 0);
-          we        : in  std_logic;
-          byte_m    : in  std_logic;
-
-          SRAM_ADDR : out   std_logic_vector(17 downto 0);
-          SRAM_DQ   : inout std_logic_vector(15 downto 0);
-          SRAM_UB_N : out   std_logic;
-          SRAM_LB_N : out   std_logic;
-          SRAM_CE_N : out   std_logic;
-          SRAM_OE_N : out   std_logic;
-          SRAM_WE_N : out   std_logic;
-		  vga_addr 		: out std_logic_vector(12 downto 0);
-		  vga_we 		: out std_logic;
-		  vga_wr_data 	: out std_logic_vector(15 downto 0);
-		  vga_rd_data 	: in std_logic_vector(15 downto 0));
-	end component;
-	
-	component controladores_IO
-		port (	boot 		: IN STD_LOGIC;
-				debug		: IN STD_LOGIC;
-				addr_m		: IN std_logic_vector(15 downto 0);
-				CLOCK_50 	: IN std_logic;
-				addr_io	 	: IN std_logic_vector(7 downto 0);
-				wr_io 		: in std_logic_vector(15 downto 0);
-				rd_io 		: out std_logic_vector(15 downto 0);
-				wr_out 		: in std_logic;
-				rd_in 		: in std_logic;
-				led_verdes 	: OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
-				led_rojos 	: OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
-				pulsadores  : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
-				switchs		: IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-				visor0		: OUT STD_LOGIC_VECTOR(6 downto 0);
-				visor1		: OUT STD_LOGIC_VECTOR(6 downto 0);
-				visor2		: OUT STD_LOGIC_VECTOR(6 downto 0);
-				visor3		: OUT STD_LOGIC_VECTOR(6 downto 0);
-				ps2_clk 	: inout std_logic;
-				ps2_data 	: inout std_logic;
-				vga_cursor 	: out std_logic_vector(15 downto 0);
-				vga_cursor_enable	: out std_logic);
-	end component;
-	
+    component proc
+        port (  clk         : IN  STD_LOGIC;
+                boot        : IN  STD_LOGIC;
+                datard_m    : IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
+                addr_m      : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+                data_wr     : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+                wr_m        : OUT STD_LOGIC;
+                word_byte   : OUT STD_LOGIC;
+                addr_io     : out std_logic_vector(7 downto 0);
+                wr_io       : out std_logic_vector(15 downto 0);
+                rd_io       : in  std_logic_vector(15 downto 0);
+                wr_out      : out std_logic;
+                rd_in       : out std_logic;
+                etapa       : out std_logic_vector( 1 downto 0);
+                intr        : in  std_logic;
+                inta        : out std_logic);
+    end component;
+    
+    component MemoryController
+        port (clk       : in  std_logic;
+            addr        : in  std_logic_vector(15 downto 0);
+            wr_data     : in  std_logic_vector(15 downto 0);
+            rd_data     : out std_logic_vector(15 downto 0);
+            we          : in  std_logic;
+            byte_m      : in  std_logic;
+            
+            SRAM_ADDR   : out   std_logic_vector(17 downto 0);
+            SRAM_DQ     : inout std_logic_vector(15 downto 0);
+            SRAM_UB_N   : out   std_logic;
+            SRAM_LB_N   : out   std_logic;
+            SRAM_CE_N   : out   std_logic;
+            SRAM_OE_N   : out   std_logic;
+            SRAM_WE_N   : out   std_logic;
+            vga_addr    : out std_logic_vector(12 downto 0);
+            vga_we      : out std_logic;
+            vga_wr_data : out std_logic_vector(15 downto 0);
+            vga_rd_data : in std_logic_vector(15 downto 0));
+    end component;
+    
+    component controladores_IO
+        port (  boot        : IN STD_LOGIC;
+                debug       : IN STD_LOGIC;
+                addr_m      : IN std_logic_vector(15 downto 0);
+                CLOCK_50    : IN std_logic;
+                addr_io     : IN std_logic_vector(7 downto 0);
+                wr_io       : in std_logic_vector(15 downto 0);
+                rd_io       : out std_logic_vector(15 downto 0);
+                wr_out      : in std_logic;
+                rd_in       : in std_logic;
+                led_verdes  : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+                led_rojos   : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+                keys        : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+                switchs     : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+                visor0      : OUT STD_LOGIC_VECTOR(6 downto 0);
+                visor1      : OUT STD_LOGIC_VECTOR(6 downto 0);
+                visor2      : OUT STD_LOGIC_VECTOR(6 downto 0);
+                visor3      : OUT STD_LOGIC_VECTOR(6 downto 0);
+                ps2_clk     : inout std_logic;
+                ps2_data    : inout std_logic;
+                vga_cursor  : out std_logic_vector(15 downto 0);
+                vga_cursor_enable   : out std_logic;
+                inta        : IN  STD_LOGIC;
+                intr        : OUT STD_LOGIC);
+    end component;
+    
 	component vga_controller	-- necesitamos cosas de MemoryController y de controladores_IO, asÃƒÆ’Ã‚Â­ que lo dejamos aquÃƒÆ’Ã‚Â­
 		port(clk_50mhz      : in  std_logic; -- system clock signal
 			 reset          : in  std_logic; -- system reset
@@ -139,6 +144,9 @@ ARCHITECTURE Structure OF sisa IS
 	
 	signal pc_fromproc : std_logic_vector(15 downto 0);
 	
+    signal intr_fromio : std_logic := '0';
+    signal inta_toio   : std_logic := '0';
+    
 	signal clock_counter : std_logic_vector(4 downto 0) := "00000";
 	signal adv_instr : std_logic := '0';	-- si 1, avanza hasta el comienzo de la siguiente instruccion
 	-- Si SW(8)='1', avanza una instrucciÃƒÆ’Ã‚Â³n cada vez que se pulsa KEY(0) -> avanza 4 ciclos
@@ -169,7 +177,9 @@ BEGIN
 					rd_io => rd_io_from_io,
 					wr_out => wr_out_from_proc,
 					rd_in => rd_in_from_proc,
-					etapa => LEDR(9 downto 8));
+					etapa => LEDR(9 downto 8),
+                    intr => intr_fromio,
+                    inta => inta_toio);
 					
 	memControl : MemoryController
 		port map(	clk => CLOCK_50,
@@ -193,7 +203,7 @@ BEGIN
 	controlIO : controladores_IO
 		port map(	boot => SW(9),
 					debug => SW(8),
-					addr_m => datard_m_to_proc,
+					addr_m => addr_m_from_proc,
 					CLOCK_50 => CLOCK_50,
 					addr_io => addr_io_from_proc,
 					wr_io => wr_io_from_proc,
@@ -202,7 +212,7 @@ BEGIN
 					rd_in => rd_in_from_proc,
 					led_verdes => LEDG,
 					led_rojos => LEDR(7 downto 0),
-					pulsadores => KEY,
+					keys => KEY,
 					switchs => SW(7 downto 0),
 					visor0 => HEX0,
 					visor1 => HEX1,
@@ -211,7 +221,9 @@ BEGIN
 					ps2_clk => PS2_CLK,
 					ps2_data => PS2_DAT,
 					vga_cursor => vga_cursor_fromio,
-					vga_cursor_enable => vga_c_e_fromio);
+					vga_cursor_enable => vga_c_e_fromio,
+                    intr => intr_fromio,
+                    inta => inta_toio);
 	
 
 	vga_c : vga_controller
@@ -233,8 +245,8 @@ BEGIN
 			byte_m => word_byte_from_proc,
 			vga_cursor => vga_cursor_fromio,
 			vga_cursor_enable => vga_c_e_fromio);
-	VGA_R <= vga_red(3 downto 0);
-	VGA_G <= vga_green(3 downto 0);
-	VGA_B <= vga_blue(3 downto 0);
+            VGA_R <= vga_red(3 downto 0);
+            VGA_G <= vga_green(3 downto 0);
+            VGA_B <= vga_blue(3 downto 0);
 END Structure;
 

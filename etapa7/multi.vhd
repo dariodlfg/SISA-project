@@ -21,7 +21,7 @@ entity multi is
 		 wrdsys	   : OUT STD_LOGIC;
 		 c_system  : OUT STD_LOGIC; -- 1 si el ciclo actual es de system
 		 etapa     : OUT STD_LOGIC_VECTOR(1 downto 0));
-end entity;
+end multi;
 
 architecture Structure of multi is
 	type estado_proc is (F, DEMW, SYSTEM);

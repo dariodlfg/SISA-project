@@ -24,7 +24,8 @@ ENTITY control_l IS
 		  wr_out	: OUT STD_LOGIC;
 		  wrd_sys	: OUT STD_LOGIC;
 		  a_sys		: OUT STD_LOGIC;
-		  es_reti   : OUT STD_LOGIC);
+		  es_reti   : OUT STD_LOGIC;
+          inta      : OUT STD_LOGIC);
 END control_l;
 
 
@@ -36,7 +37,7 @@ BEGIN
 			"1010000"	when ir(15 downto 12)="1111" and ir(5 downto 0)="110000" else	-- w <= x para WRS
 			"1111000"	when ir(15 downto 12)="1111" and ir(5 downto 0)="100000" else	-- EI
 			"1111001"	when ir(15 downto 12)="1111" and ir(5 downto 0)="100001" else	-- DI
-			"1010000"	when ir(15 downto 12)="1111" and ir(5 downto 0)="101100" else	-- w <= x para RETI
+			"1010000"	when ir(15 downto 12)="1111" and ir(5 downto 0)="100100" else	-- w <= x para RETI
 			"1111111"	when ir(15 downto 12)="1111" else				-- otro
 			ir(15 downto 12) & ir(5 downto 3);
 			
@@ -50,6 +51,7 @@ BEGIN
 			'1' when ir(15 downto 12)="1010" and ir(2)='1' else -- JAL
 			'1' when ir(15 downto 12)="0111" and ir(8)='0' else -- IN
 			'1' when ir(15 downto 12)="1111" and ir(5 downto 0)="101100" else  -- RDS
+            '1' when ir(15 downto 12)="1111" and ir(5 downto 0)="101000" else  -- GETIID
 			'0';
 			
 	addr_a <= 	"111" when ir(15 downto 12)="1111" and ir(5 downto 1)="10000" else -- EI, DI
@@ -103,7 +105,9 @@ BEGIN
 			"10" when ir(15 downto 12)="1111" and ir(5 downto 0)="100100" else
 			"00";
 			
-	rd_in <= '1' when ir(15 downto 12)="0111" and ir(8)='0' else '0';
+	rd_in <= '1' when ir(15 downto 12)="0111" and ir(8)='0' else
+             '1' when ir(15 downto 12)="1111" and ir(5 downto 0)="101000" else 
+             '0';
 	
 	wr_out <= '1' when ir(15 downto 12)="0111" and ir(8)='1' else '0';
 	
@@ -118,5 +122,8 @@ BEGIN
 			 '0';
 	
 	es_reti <= '1' when ir(15 downto 12)="1111" and ir(5 downto 0)="100100" else '0';
+    
+    inta <= '1' when ir(15 downto 12)="1111" and ir(5 downto 0)="101000" else  -- GETIID
+            '0';
 	
 END Structure;

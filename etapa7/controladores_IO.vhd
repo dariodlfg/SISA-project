@@ -16,7 +16,7 @@ ENTITY controladores_IO IS
 			rd_in 		: in std_logic;
 			led_verdes 	: OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
 			led_rojos 	: OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
-			pulsadores  : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+			keys  : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
 			switchs		: IN STD_LOGIC_VECTOR(7 DOWNTO 0);
 			visor0		: OUT STD_LOGIC_VECTOR(6 downto 0);
 			visor1		: OUT STD_LOGIC_VECTOR(6 downto 0);
@@ -25,7 +25,9 @@ ENTITY controladores_IO IS
 			ps2_clk 	: inout std_logic;
 			ps2_data 	: inout std_logic;
 			vga_cursor 	: out std_logic_vector(15 downto 0);
-			vga_cursor_enable	: out std_logic);
+			vga_cursor_enable	: out std_logic;
+            inta        : IN  STD_LOGIC;
+            intr        : OUT STD_LOGIC);
 END controladores_IO;
 ARCHITECTURE Structure OF controladores_IO IS
 	
@@ -43,6 +45,48 @@ ARCHITECTURE Structure OF controladores_IO IS
 				clear_char : in    STD_LOGIC;
 				data_ready : out   STD_LOGIC);
 	end component;
+    
+    component pulsadores
+        PORT (  CLOCK_50  : IN  STD_LOGIC;
+                boot      : IN  STD_LOGIC;
+                inta      : IN  STD_LOGIC;
+                keys      : IN  STD_LOGIC_VECTOR(3 DOWNTO 0);
+                intr      : OUT STD_LOGIC;
+                read_key  : OUT STD_LOGIC_VECTOR(3 DOWNTO 0));
+    end component;
+    
+    component interruptores
+        PORT (  CLOCK_50  : IN  STD_LOGIC;
+                boot      : IN  STD_LOGIC;
+                inta      : IN  STD_LOGIC;
+                switches  : IN  STD_LOGIC_VECTOR(7 DOWNTO 0);
+                intr      : OUT STD_LOGIC;
+                rd_switch : OUT STD_LOGIC_VECTOR(7 DOWNTO 0));
+    end component;
+    
+    component timer
+        PORT (  CLOCK_50  : IN  STD_LOGIC;
+                boot      : IN  STD_LOGIC;
+                inta      : IN  STD_LOGIC;
+                intr      : OUT STD_LOGIC);
+    end component;
+    
+    component interrupt_controller
+        PORT (  clk           : IN  STD_LOGIC;
+                boot          : IN  STD_LOGIC;
+                inta          : IN  STD_LOGIC;
+                key_intr      : IN  STD_LOGIC;
+                ps2_intr      : IN  STD_LOGIC;
+                switch_intr   : IN  STD_LOGIC;
+                timer_intr    : IN  STD_LOGIC;
+                ps2_helper    : IN  STD_LOGIC;
+                intr          : OUT STD_LOGIC;
+                key_inta      : OUT STD_LOGIC;
+                ps2_inta      : OUT STD_LOGIC;
+                switch_inta   : OUT STD_LOGIC;
+                timer_inta    : OUT STD_LOGIC;
+                iid           : OUT STD_LOGIC_VECTOR(7 DOWNTO 0));
+    end component;
 	
 	--type memIO is array(255 downto 0) of std_logic_vector(15 downto 0);
 	type memIO is array(31 downto 0) of std_logic_vector(15 downto 0); -- para que compile en tiempo finito
@@ -67,8 +111,19 @@ ARCHITECTURE Structure OF controladores_IO IS
 	signal d_ready : std_logic;
 	
 	signal clr_char : std_logic := '0';
+    signal ps2_helper : std_logic := '0';
 	signal contador_ciclos : STD_LOGIC_VECTOR(15 downto 0):=x"0000";
 	signal contador_milisegundos : STD_LOGIC_VECTOR(15 downto 0):=x"0000"; 
+    
+    signal puls_intr : std_logic := '0';
+    signal puls_inta : std_logic := '0';
+    signal switch_intr : std_logic := '0';
+    signal switch_inta : std_logic := '0';
+    signal timer_intr : std_logic := '0';
+    signal timer_inta : std_logic := '0';
+    
+    signal iid : std_logic_vector(15 downto 0) :=x"0000";
+    
 BEGIN
 	
 	keyboard_c : keyboard_controller
@@ -81,23 +136,65 @@ BEGIN
 			clear_char => clr_char,
 			data_ready => d_ready);
 	
+    timer0 : timer
+        port map(
+            CLOCK_50 => CLOCK_50,
+            boot => boot,
+            intr => timer_intr,
+            inta => timer_inta);
+    
+    keys0 : pulsadores
+        port map(
+            CLOCK_50 => CLOCK_50,
+            boot => boot,
+            keys => keys,
+            --read_key => IO(7)(3 downto 0),
+            intr => puls_intr,
+            inta => puls_inta);
+    
+    switch0 : interruptores
+        port map(
+            CLOCK_50 => CLOCK_50,
+            boot => boot,
+            switches => switchs,
+            --rd_switch => IO(8)(7 downto 0),
+            intr => switch_intr,
+            inta => switch_inta);
+    
+    int_c : interrupt_controller
+        port map(
+            clk => CLOCK_50,
+            boot => boot,
+            inta => inta,
+            intr => intr,
+            key_intr => puls_intr,
+            key_inta => puls_inta,
+            ps2_intr => d_ready,
+            ps2_inta => clr_char,
+            ps2_helper => ps2_helper,
+            switch_intr => switch_intr,
+            switch_inta => switch_inta,
+            timer_intr => timer_intr,
+            timer_inta => timer_inta,
+            iid => iid(7 downto 0));
+    
 	process (CLOCK_50,wr_out,boot) begin
 		if rising_edge(CLOCK_50) then
-			IO(7)(3 downto 0) <= pulsadores;
+			IO(7)(3 downto 0) <= keys;
 			IO(8)(7 downto 0) <= switchs;
 			IO(15)(7 downto 0) <= rd_char;
 			IO(16)(0) <= d_ready;
 		end if;
 		if rising_edge(CLOCK_50) then
 			if boot='1' then
-				IO <= (others => (others =>'0'));	-- reset
+                IO <= (others => (others =>'0'));	-- reset
 			elsif wr_out='1' and wr_perm(to_integer(unsigned(addr_io)))='1' then
 				IO(to_integer(unsigned(addr_io))) <= wr_io;
 			end if;
 			if wr_out='1' and boot='0' and addr_io = x"10" then
-				clr_char <= '1';
+				ps2_helper <= '1';
 			else
-				clr_char <= '0';
+				ps2_helper <= '0';
 			end if;
 			if wr_out='1' and addr_io = x"15" then
 				contador_milisegundos <= wr_io;
@@ -109,7 +206,7 @@ BEGIN
 				if contador_milisegundos>0 then
 					contador_milisegundos <= contador_milisegundos-1;
 				end if;
-			else--if contador_milisegundos>0 then	-- esta condición para que al poner un valor en el puerto 21 empiece a contar un ms entero
+			else
 				contador_ciclos <= contador_ciclos-1;
 			end if;
 			IO(20) <= contador_ciclos;
@@ -117,7 +214,7 @@ BEGIN
 		end if; 
 
 	end process;
-	rd_io <= IO(to_integer(unsigned(addr_io)));-- when rd_in='1' else x"0000";
+	rd_io <= IO(to_integer(unsigned(addr_io))) when inta='0' else iid;
 	led_verdes <= IO(5)(7 downto 0);
 	led_rojos <= IO(6)(7 downto 0);
 	
