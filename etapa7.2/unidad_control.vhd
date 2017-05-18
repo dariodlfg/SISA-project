@@ -11,6 +11,9 @@ ENTITY unidad_control IS
             aluout      : IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
             int_hab     : IN  STD_LOGIC;
             intr        : IN  STD_LOGIC;
+            al_ilegal   : IN  STD_LOGIC;
+            div_zero    : IN  STD_LOGIC;
+            addr_m      : IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
             op          : OUT STD_LOGIC_VECTOR( 6 DOWNTO 0);
             wrd         : OUT STD_LOGIC;
             addr_a      : OUT STD_LOGIC_VECTOR( 2 DOWNTO 0);
@@ -27,13 +30,16 @@ ENTITY unidad_control IS
             rd_in       : OUT STD_LOGIC;
             wr_out      : OUT STD_LOGIC;
             addr_io     : OUT STD_LOGIC_VECTOR( 7 DOWNTO 0);
-            wr_io       : OUT STD_LOGIC_VECTOR(15 downto 0);
+            wr_io       : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
             wrd_sys     : OUT STD_LOGIC;
             a_sys       : OUT STD_LOGIC;
             es_reti     : OUT STD_LOGIC;
             c_system    : OUT STD_LOGIC;
-            etapa       : OUT STD_LOGIC_VECTOR( 1 downto 0);
-            inta        : OUT STD_LOGIC);
+            etapa       : OUT STD_LOGIC_VECTOR( 1 DOWNTO 0);
+            inta        : OUT STD_LOGIC;
+            t_evento    : OUT STD_LOGIC_VECTOR( 3 DOWNTO 0);
+            exc         : OUT STD_LOGIC;
+            dir_acc     : OUT STD_LOGIC_VECTOR(15 DOWNTO 0));
 END unidad_control;
 
 
@@ -60,7 +66,8 @@ ARCHITECTURE Structure OF unidad_control IS
                 wrd_sys     : OUT STD_LOGIC;
                 a_sys       : OUT STD_LOGIC;
                 es_reti     : OUT STD_LOGIC;
-                inta        : OUT STD_LOGIC);
+                inta        : OUT STD_LOGIC;
+                ill_instr   : OUT STD_LOGIC);
     end component;
     
     component multi
@@ -71,8 +78,9 @@ ARCHITECTURE Structure OF unidad_control IS
                 wr_m_l      : IN  STD_LOGIC;
                 wr_o_l      : IN  STD_LOGIC;
                 w_b         : IN  STD_LOGIC;
-                ej_system   : IN  STD_LOGIC;    -- ejecutar system
+                exception   : IN  STD_LOGIC;	-- ejecutar system
                 wrdsys_l    : IN  STD_LOGIC;
+                commit      : IN  STD_LOGIC;
                 ldpc        : OUT STD_LOGIC;
                 wrd         : OUT STD_LOGIC;
                 wr_m        : OUT STD_LOGIC;
@@ -81,8 +89,22 @@ ARCHITECTURE Structure OF unidad_control IS
                 ins_dad     : OUT STD_LOGIC;
                 word_byte   : OUT STD_LOGIC;
                 wrdsys      : OUT STD_LOGIC;
-                c_system    : OUT STD_LOGIC;     -- 1 si el ciclo actual es de system
-                etapa       : OUT STD_LOGIC_VECTOR(1 downto 0)); -- para debug
+                c_system    : OUT STD_LOGIC; -- 1 si el ciclo actual es de system
+                etapa       : OUT STD_LOGIC_VECTOR(1 downto 0));
+    end component;
+    
+    component exception_controller
+        PORT (  --clk             : IN  STD_LOGIC;
+                int_hab         : IN  STD_LOGIC;
+                intr            : IN  STD_LOGIC;    -- codigo 15 si int_hab=1
+                div_zero        : IN  STD_LOGIC;    -- codigo 4
+                illegal_instr   : IN  STD_LOGIC;    -- codigo 0
+                al_ilegal       : IN  STD_LOGIC;    -- codigo 1
+                addr_m          : IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
+                exception       : OUT STD_LOGIC;    -- '1' si hay que ir a fase SYSTEM
+                commit          : OUT STD_LOGIC;    -- Si '0', los permisos de escritura y ld_pc se ponen a 0: hay que repetir la instruccion
+                t_evento        : OUT STD_LOGIC_VECTOR(3 downto 0); 
+				dir_acc         : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)); 
     end component;
     
     signal new_pc : std_logic_vector(15 downto 0) := x"C000";
@@ -99,7 +121,10 @@ ARCHITECTURE Structure OF unidad_control IS
     signal tknbr_fromcontrol : std_logic_vector(1 downto 0);
     signal immed_fromcontrol : std_logic_vector(15 downto 0);
     
-    signal ej_system_tomulti : std_logic;
+    signal ill_instr_toexc : std_logic := '0';
+    
+    signal exception_tomulti : std_logic := '0';
+    signal commit_tomulti : std_logic := '1';
     signal c_system_frommulti : std_logic;
     -- Aqui iria la declaracion de las entidades que vamos a usar
     -- Tambien crearemos los cables/buses (signals) necesarios para unir las entidades
@@ -127,7 +152,7 @@ BEGIN
         end if;
     end process;
     pc <= new_pc;
-    ej_system_tomulti <= int_hab and intr;
+    --ej_system_tomulti <= int_hab and intr;
     control : control_l
         port map(
             ir => ir_tocontrol,
@@ -151,7 +176,8 @@ BEGIN
             wrd_sys => wrd_sys_fromcontrol,
             a_sys => a_sys,
             es_reti => es_reti,
-            inta => inta);
+            inta => inta,
+            ill_instr => ill_instr_toexc);
     mult : multi
         port map(
             clk => clk,
@@ -171,11 +197,27 @@ BEGIN
             ins_dad => ins_dad,
             word_byte => word_byte,
             c_system => c_system_frommulti,
-            ej_system => ej_system_tomulti,
-            etapa => etapa);
+            exception => exception_tomulti,
+            etapa => etapa,
+            commit => commit_tomulti);
+    
+    exc_c : exception_controller
+        port map(
+            --clk => clk,
+            int_hab => int_hab,
+            intr => intr,
+            div_zero => div_zero,
+            illegal_instr => ill_instr_toexc,
+            al_ilegal => al_ilegal,
+            exception => exception_tomulti,
+            commit => commit_tomulti,
+            t_evento => t_evento,
+            addr_m => addr_m,
+            dir_acc => dir_acc);
     
     immed <= immed_fromcontrol;
     addr_io <= immed_fromcontrol(7 downto 0);
     wr_io <= aluout;
     c_system <= c_system_frommulti;
+    exc <= exception_tomulti;
 END Structure;

@@ -193,8 +193,10 @@ BEGIN
         if rising_edge(CLOCK_50) then
             if boot='1' then
                 --IO(12) <= x"0001";
+				--IO(11) <= x"0000";
+                --IO <= (others => x"0000");
                 IO <= (others => (others =>'0'));    -- reset
-                c_e <= '1';
+                --c_e <= '1';
             elsif wr_out='1' and wr_perm(to_integer(unsigned(addr_io)))='1' then
                 IO(to_integer(unsigned(addr_io))) <= wr_io;
             end if;
@@ -203,9 +205,9 @@ BEGIN
             else
                 ps2_helper <= '0';
             end if;
-            if wr_out='1' and addr_io=x"0C" then
-                c_e <= '0';
-            end if;
+            --if wr_out='1' and addr_io=x"0C" then
+            --    c_e <= '0';
+            --end if;
             if wr_out='1' and addr_io = x"15" then
                 contador_milisegundos <= wr_io;
             end if;
@@ -240,5 +242,5 @@ BEGIN
     visor3 <= v3 when IO(9)(3)='1' or debug='1' else "1111111";
     
     vga_cursor <= IO(11);
-    vga_cursor_enable <= c_e or IO(12)(0);
+    vga_cursor_enable <= IO(12)(0);
 END Structure;

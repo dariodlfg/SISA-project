@@ -9,14 +9,16 @@ ENTITY proc IS
             data_wr     : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
             wr_m        : OUT STD_LOGIC;
             word_byte   : OUT STD_LOGIC;
-            addr_io     : out std_logic_vector(7 downto 0);
+            addr_io     : out std_logic_vector( 7 downto 0);
             wr_io       : out std_logic_vector(15 downto 0);
             rd_io       : in  std_logic_vector(15 downto 0);
             wr_out      : out std_logic;
             rd_in       : out std_logic;
             etapa       : out std_logic_vector( 1 downto 0);
+            al_ilegal   : IN  STD_LOGIC;    -- lo calculamos en el controlador de memoria
             intr        : in  std_logic;
-            inta        : out std_logic);
+            inta        : out std_logic;
+            exc         : OUT STD_LOGIC);
 END proc;
 
 ARCHITECTURE Structure OF proc IS
@@ -28,6 +30,9 @@ ARCHITECTURE Structure OF proc IS
                 aluout      : IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
                 int_hab     : IN  STD_LOGIC;
                 intr        : IN  STD_LOGIC;
+                al_ilegal   : IN  STD_LOGIC;
+                div_zero    : IN  STD_LOGIC;
+                addr_m      : IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
                 op          : OUT STD_LOGIC_VECTOR( 6 DOWNTO 0);
                 wrd         : OUT STD_LOGIC;
                 addr_a      : OUT STD_LOGIC_VECTOR( 2 DOWNTO 0);
@@ -44,13 +49,16 @@ ARCHITECTURE Structure OF proc IS
                 rd_in       : OUT STD_LOGIC;
                 wr_out      : OUT STD_LOGIC;
                 addr_io     : OUT STD_LOGIC_VECTOR( 7 DOWNTO 0);
-                wr_io       : OUT STD_LOGIC_VECTOR(15 downto 0);
+                wr_io       : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
                 wrd_sys     : OUT STD_LOGIC;
                 a_sys       : OUT STD_LOGIC;
                 es_reti     : OUT STD_LOGIC;
                 c_system    : OUT STD_LOGIC;
                 etapa       : OUT STD_LOGIC_VECTOR( 1 DOWNTO 0);
-                inta        : OUT STD_LOGIC);
+                inta        : OUT STD_LOGIC;
+                t_evento    : OUT STD_LOGIC_VECTOR( 3 DOWNTO 0);
+                exc         : OUT STD_LOGIC;
+                dir_acc     : OUT STD_LOGIC_VECTOR(15 DOWNTO 0));
     end component;
     
     component datapath
@@ -74,11 +82,14 @@ ARCHITECTURE Structure OF proc IS
                 wrd_sys     : IN  STD_LOGIC;
                 c_system    : IN  STD_LOGIC;
                 es_reti     : IN  STD_LOGIC;
+                t_evento    : IN  STD_LOGIC_VECTOR( 3 DOWNTO 0);
+				dir_acc     : IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
                 addr_m      : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
                 data_wr     : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
                 z           : OUT STD_LOGIC;
                 aluout      : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
-                int_hab     : OUT STD_LOGIC);
+                int_hab     : OUT STD_LOGIC;
+                div_zero    : OUT STD_LOGIC);
     end component;
     
     signal immed_x2_fromuc : std_logic;
@@ -97,10 +108,17 @@ ARCHITECTURE Structure OF proc IS
     signal rd_in_fromuc : std_logic :='0';
     signal int_hab_touc : std_logic;
     
+    signal dir_acc_fromuc : std_logic_vector(15 downto 0);
+    
+    signal div_zero_touc : std_logic :='0';
+    signal t_evento_fromuc : std_logic_vector(3 downto 0);
+    
     signal a_sys_fromuc : std_logic;
     signal wrd_sys_fromuc : std_logic;
     signal c_sys_fromuc : std_logic;
     signal es_reti_fromuc : std_logic;
+	
+	signal addr_m_touc : std_logic_vector(15 downto 0);
 
 BEGIN
 
@@ -137,7 +155,13 @@ BEGIN
             es_reti => es_reti_fromuc,
             etapa => etapa,
             inta => inta,
-            intr => intr);
+            intr => intr,
+            al_ilegal => al_ilegal,
+            div_zero => div_zero_touc,
+            exc => exc,
+            t_evento => t_evento_fromuc,
+            addr_m => addr_m_touc,
+            dir_acc => dir_acc_fromuc);
     
     dp : datapath
         port map(
@@ -154,7 +178,7 @@ BEGIN
             ins_dad => ins_dad_fromuc,
             pc => pc_fromuc,
             in_d => in_d_fromuc,
-            addr_m => addr_m,
+            addr_m => addr_m_touc,
             data_wr => data_wr,
             rb_n => rb_n_fromuc,
             rd_in => rd_in_fromuc,
@@ -165,5 +189,10 @@ BEGIN
             c_system => c_sys_fromuc,
             a_sys => a_sys_fromuc,
             wrd_sys => wrd_sys_fromuc,
-            es_reti => es_reti_fromuc);
+            es_reti => es_reti_fromuc,
+            div_zero => div_zero_touc,
+            t_evento => t_evento_fromuc,
+            dir_acc => dir_acc_fromuc);
+			
+	addr_m <= addr_m_touc;
 END Structure;

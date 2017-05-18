@@ -19,10 +19,11 @@ entity MemoryController is
             SRAM_OE_N   : out   std_logic := '0';
             SRAM_WE_N   : out   std_logic := '1';
             -- señales vga
-            vga_addr    : out std_logic_vector(12 downto 0);
-            vga_we      : out std_logic;
-            vga_wr_data : out std_logic_vector(15 downto 0);
-            vga_rd_data : in std_logic_vector(15 downto 0));
+            vga_addr    : out   std_logic_vector(12 downto 0);
+            vga_we      : out   std_logic;
+            vga_wr_data : out   std_logic_vector(15 downto 0);
+            vga_rd_data : in    std_logic_vector(15 downto 0);
+            al_ilegal   : out   std_logic);
 end MemoryController;
 
 architecture comportament of MemoryController is
@@ -73,4 +74,6 @@ begin
     vga_we <= we when es_vga='1' else '0';
     rd_data <= vga_rd_data when es_vga='1' else rd_data_sram;
     vga_wr_data <= wr_data;
+    
+    al_ilegal <= '1' when byte_m='0' and addr(0)='1' else '0';
 end comportament;

@@ -9,8 +9,9 @@ entity multi is
             wr_m_l      : IN  STD_LOGIC;
             wr_o_l      : IN  STD_LOGIC;
             w_b         : IN  STD_LOGIC;
-            ej_system   : IN  STD_LOGIC;	-- ejecutar system
+            exception   : IN  STD_LOGIC;	-- ejecutar system
             wrdsys_l    : IN  STD_LOGIC;
+            commit      : IN  STD_LOGIC;
             ldpc        : OUT STD_LOGIC;
             wrd         : OUT STD_LOGIC;
             wr_m        : OUT STD_LOGIC;
@@ -33,7 +34,7 @@ begin
                 state <= F;
             elsif state = F then
                 state <= DEMW;
-            elsif state = DEMW and ej_system = '1' then
+            elsif state = DEMW and exception = '1' then
                 state <= SYSTEM;
             else
                 state <= F;
@@ -42,11 +43,11 @@ begin
     end process;
     ldpc <=	ldpc_l when state = DEMW else '1' when state = SYSTEM else '0';
     
-    wrd <=	wrd_l when state = DEMW else '0';
+    wrd <=	wrd_l and commit when state = DEMW else '0';
     
-    wr_m <=	wr_m_l when state = DEMW else '0';
+    wr_m <=	wr_m_l and commit when state = DEMW else '0';
     
-    wr_out <= wr_o_l when state = DEMW else '0';
+    wr_out <= wr_o_l and commit when state = DEMW else '0';
     
     word_byte <=w_b when state = DEMW else '0';
     
@@ -56,10 +57,7 @@ begin
     
     c_system <= '1' when state = SYSTEM else '0';
     
-    wrdsys <= wrdsys_l when state = DEMW else '0';	-- en ciclo system se guarda algo igual
-    
-    --etapa(0) <= '0' when state=F else '1';
-    
+    wrdsys <= wrdsys_l and commit when state = DEMW else '0';	-- en ciclo system se guarda algo igual
     
     etapa <=    "00" when state = F else 
                 "01" when state = DEMW else 

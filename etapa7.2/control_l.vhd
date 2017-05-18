@@ -25,7 +25,8 @@ ENTITY control_l IS
             wrd_sys     : OUT STD_LOGIC;
             a_sys       : OUT STD_LOGIC;
             es_reti     : OUT STD_LOGIC;
-            inta        : OUT STD_LOGIC);
+            inta        : OUT STD_LOGIC;
+            ill_instr   : OUT STD_LOGIC);
 END control_l;
 
 
@@ -47,7 +48,7 @@ BEGIN
             
     ldpc <= '0' when ir=x"FFFF" else '1';
     
-    wrd <=  --'0' when es_system='0' else
+    wrd <=  --'0' when es_system='1' else
             '1' when ir(15 downto 14)="00" else
             '1' when opcode="1000" else
             '1' when opcode="0101" else
@@ -92,9 +93,13 @@ BEGIN
                 '1' when opcode="0100" else
                 '0';
     
-    word_byte <='1' when opcode="1101" else
-                '1' when opcode="1110" else
-                '0';
+ --   word_byte <='1' when opcode="1101" else
+ --               '1' when opcode="1110" else
+ --               '0';
+    
+    word_byte <=    '0' when opcode="0011" else
+                    '0' when opcode="0100" else
+                    '1';                    -- para evitar exc. memoria no alineada
     
     rb_n <= '1' when ir(15 downto 13)="000" else
             '1' when opcode="1000" else
@@ -131,5 +136,19 @@ BEGIN
     
     inta <= '1' when opcode="1111" and ir(5 downto 0)="101000" else  -- GETIID
             '0';
-    
+    -- TODO
+    ill_instr <='1' when opcode="0001" and (ir(5 downto 3)="010" or ir(5 downto 3)="110" or ir(5 downto 3)="111") else
+                '1' when opcode="1000" and (ir(5 downto 3)="011" or ir(5 downto 3)="110" or ir(5 downto 3)="111") else
+                '1' when opcode="1001" else -- no implementado
+                '1' when opcode="1010" and (ir(5 downto 3)/="000") else
+                '1' when opcode="1010" and (ir(2 downto 0)="010" or ir(2 downto 0)="101"
+                    or ir(2 downto 0)="110" or ir(2 downto 0)="111") else -- la ultima es el CALLS, hay que borrarlo luego
+                '1' when opcode="1011" else
+                '1' when opcode="1100" else
+                '1' when opcode="1111" and ir(5)='0' else
+                '0' when opcode="1111" and (ir(4 downto 0)="00000" or ir(4 downto 0)="00001" or ir(4 downto 0)="00100"
+                    or ir(4 downto 0)="01000" or ir(4 downto 0)="01100" or ir(4 downto 0)="10000") else 
+                '0' when ir=x"FFFF" else
+                '1' when opcode="1111" else
+                '0';
 END Structure;

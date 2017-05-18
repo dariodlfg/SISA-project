@@ -5,11 +5,12 @@ use ieee.numeric_std.all;
 
 
 ENTITY alu IS
-    PORT (  x   : IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
-            y   : IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
-            op  : IN  STD_LOGIC_VECTOR( 6 DOWNTO 0);
-            w   : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
-            z   : OUT STD_LOGIC);
+    PORT (  x       : IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
+            y       : IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
+            op      : IN  STD_LOGIC_VECTOR( 6 DOWNTO 0);
+            w       : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+            z       : OUT STD_LOGIC;
+            div_zero: OUT STD_LOGIC);
 END alu;
 
 
@@ -67,4 +68,6 @@ BEGIN
             -- acc. memoria
             x+y;
     z <= '1' when y=x"0000" else '0';
+    
+    div_zero <= '1' when op(6 downto 1)="100010" and y=x"0000" else '0';
 END Structure;

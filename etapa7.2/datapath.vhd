@@ -24,11 +24,14 @@ ENTITY datapath IS
             wrd_sys     : IN  STD_LOGIC;
             c_system    : IN  STD_LOGIC;
             es_reti     : IN  STD_LOGIC;
+            t_evento    : IN  STD_LOGIC_VECTOR( 3 DOWNTO 0);
+            dir_acc     : IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
             addr_m      : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
             data_wr     : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
             z           : OUT STD_LOGIC;
             aluout      : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
-            int_hab     : OUT STD_LOGIC);
+            int_hab     : OUT STD_LOGIC;
+            div_zero    : OUT STD_LOGIC);
 END datapath;
 
 
@@ -48,6 +51,8 @@ ARCHITECTURE Structure OF datapath IS
                 a_sys   : IN  STD_LOGIC;
                 wrd_sys : IN  STD_LOGIC;
                 c_system: IN  STD_LOGIC; 
+                t_evento: IN  STD_LOGIC_VECTOR( 3 DOWNTO 0);
+                dir_inv : IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
                 es_reti : IN  STD_LOGIC;
                 a       : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
                 b       : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
@@ -55,11 +60,12 @@ ARCHITECTURE Structure OF datapath IS
     end component;
     
     component alu
-        port (  x   : IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
-                y   : IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
-                op  : IN  STD_LOGIC_VECTOR( 6 DOWNTO 0);
-                w   : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
-                z   : OUT STD_LOGIC);
+        port (  x       : IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
+                y       : IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
+                op      : IN  STD_LOGIC_VECTOR( 6 DOWNTO 0);
+                w       : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+                z       : OUT STD_LOGIC;
+                div_zero: OUT STD_LOGIC);
     end component;
     
     signal d_toreg : std_logic_vector(15 downto 0);
@@ -78,11 +84,12 @@ BEGIN
                 
     pc_inc <= pc+2;
     
-    d_toreg <=  rd_io when rd_in='1' else
+    d_toreg <=  pc when in_d="11" else
+                rd_io when rd_in='1' else
                 datard_m when in_d="01" else
                 w_fromalu when in_d="00" else
-                pc_inc when in_d="10" else
-                pc;
+                pc+2;
+                
     regs : regfile
         port map(
             clk => clk,
@@ -98,14 +105,17 @@ BEGIN
             wrd_sys => wrd_sys,
             int_hab => int_hab,
             c_system => c_system,
-            es_reti => es_reti);
+            t_evento => t_evento,
+            es_reti => es_reti,
+            dir_inv => dir_acc);
     alu0 : alu
         port map(
             x => x_toalu,
             y => y_toalu,
             op => op,
             w => w_fromalu,
-            z => z);
+            z => z,
+            div_zero => div_zero);
     data_wr <= b_fromreg;
     aluout <= w_fromalu;
 END Structure;

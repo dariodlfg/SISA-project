@@ -8,12 +8,14 @@ ENTITY regfile IS
             boot        : IN  STD_LOGIC;
             wrd         : IN  STD_LOGIC;
             d           : IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
-            addr_a      : IN  STD_LOGIC_VECTOR(2 DOWNTO 0);
-            addr_b      : IN  STD_LOGIC_VECTOR(2 DOWNTO 0);
-            addr_d      : IN  STD_LOGIC_VECTOR(2 DOWNTO 0);
+            addr_a      : IN  STD_LOGIC_VECTOR( 2 DOWNTO 0);
+            addr_b      : IN  STD_LOGIC_VECTOR( 2 DOWNTO 0);
+            addr_d      : IN  STD_LOGIC_VECTOR( 2 DOWNTO 0);
             a_sys       : IN  STD_LOGIC;
             wrd_sys     : IN  STD_LOGIC;
             c_system    : IN  STD_LOGIC; 
+            t_evento    : IN  STD_LOGIC_VECTOR( 3 DOWNTO 0);
+            dir_inv     : IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
             es_reti     : IN  STD_LOGIC;
             a           : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
             b           : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
@@ -36,7 +38,10 @@ BEGIN
             elsif c_system='1' then 
                 regsistema(0) <= regsistema(7);
                 regsistema(1) <= d;
-                regsistema(2) <= x"000F";
+                regsistema(2) <= x"000"&t_evento;
+                if t_evento="0001" then
+                    regsistema(3) <= dir_inv;
+                end if;
                 regsistema(7)(1) <= '0';
             elsif es_reti='1' then 
                 regsistema(7) <= regsistema(0);

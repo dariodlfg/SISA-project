@@ -38,14 +38,16 @@ ARCHITECTURE Structure OF sisa IS
                 data_wr     : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
                 wr_m        : OUT STD_LOGIC;
                 word_byte   : OUT STD_LOGIC;
-                addr_io     : out std_logic_vector(7 downto 0);
+                addr_io     : out std_logic_vector( 7 downto 0);
                 wr_io       : out std_logic_vector(15 downto 0);
                 rd_io       : in  std_logic_vector(15 downto 0);
                 wr_out      : out std_logic;
                 rd_in       : out std_logic;
                 etapa       : out std_logic_vector( 1 downto 0);
+                al_ilegal   : IN  STD_LOGIC;    -- lo calculamos en el controlador de memoria
                 intr        : in  std_logic;
-                inta        : out std_logic);
+                inta        : out std_logic;
+                exc         : OUT STD_LOGIC);
     end component;
     
     component MemoryController
@@ -63,10 +65,11 @@ ARCHITECTURE Structure OF sisa IS
                 SRAM_CE_N   : out   std_logic;
                 SRAM_OE_N   : out   std_logic;
                 SRAM_WE_N   : out   std_logic;
-                vga_addr    : out std_logic_vector(12 downto 0);
-                vga_we      : out std_logic;
-                vga_wr_data : out std_logic_vector(15 downto 0);
-                vga_rd_data : in std_logic_vector(15 downto 0));
+                vga_addr    : out   std_logic_vector(12 downto 0);
+                vga_we      : out   std_logic;
+                vga_wr_data : out   std_logic_vector(15 downto 0);
+                vga_rd_data : in    std_logic_vector(15 downto 0);
+                al_ilegal   : out   std_logic);
     end component;
     
     component controladores_IO
@@ -147,6 +150,8 @@ ARCHITECTURE Structure OF sisa IS
     signal intr_fromio : std_logic := '0';
     signal inta_toio   : std_logic := '0';
     
+    signal al_ilegal_frommem : std_logic := '0';
+    
     signal clock_counter : std_logic_vector(4 downto 0) := "00000";
     signal adv_instr : std_logic := '0';    -- si 1, avanza hasta el comienzo de la siguiente instruccion
     -- Si SW(8)='1', avanza una instrucciÃƒÆ’Ã‚Â³n cada vez que se pulsa KEY(0) -> avanza 4 ciclos
@@ -163,10 +168,12 @@ BEGIN
             adv_instr <= '0';
         end if;
     end process;
-    LEDR(9) <= intr_fromio;
-    LEDR(8) <= inta_toio;
+    --LEDR(9) <= intr_fromio;
+    --LEDR(8) <= inta_toio;
+    LEDR(8) <= al_ilegal_frommem;             
+    
     procesador : proc
-        port map(   clk => clock_counter(3),
+        port map(   clk => clock_counter(2),
                     boot => SW(9),
                     datard_m => datard_m_to_proc,
                     addr_m => addr_m_from_proc,
@@ -180,8 +187,10 @@ BEGIN
                     rd_in => rd_in_from_proc,
                     --etapa => LEDR(9 downto 8),
                     intr => intr_fromio,
-                    inta => inta_toio);
-                    
+                    inta => inta_toio,
+                    al_ilegal => al_ilegal_frommem,
+                    exc => LEDR(9));
+    
     memControl : MemoryController
         port map(   clk => CLOCK_50,
                     addr => addr_m_from_proc,
@@ -199,7 +208,8 @@ BEGIN
                     vga_addr => addr_vga_frommem,
                     vga_we => we_frommem,
                     vga_wr_data => wr_data_frommem,
-                    vga_rd_data => rd_data_frommem);
+                    vga_rd_data => rd_data_frommem,
+                    al_ilegal => al_ilegal_frommem);
     
     controlIO : controladores_IO
         port map(   boot => SW(9),
