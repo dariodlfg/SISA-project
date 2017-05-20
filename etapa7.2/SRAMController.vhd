@@ -28,12 +28,29 @@ signal lb,ub : std_logic := '0';
 type estado_mem is (r, w,wini);
     signal estado   : estado_mem := r;
 begin
+    
+    process (estado,byte_m,address(0)) begin
+        if estado=w then
+            escr <='0';
+        else
+            escr <='1';
+        end if;
+        if byte_m='0' then
+            lb <= '0';
+            ub <= '0';
+        elsif address(0)='0' then
+            lb <= '0';
+            ub <= '1';
+        else
+            lb <= '1';
+            ub <= '0';
+        end if;
+    end process;
     --estado <= w when WR='1' else r;
     process (clk, WR) begin
-        if falling_edge(clk) then
-            if estado=w and WR='1' then
-                estado <= w;
-            elsif estado=wini and WR='1' then
+        if rising_edge(clk) then
+            
+            if estado=wini and WR='1' then
                 estado <= w;
             elsif estado=r and WR='1' then
                 estado <= wini;
@@ -46,17 +63,17 @@ begin
     SRAM_OE_N <= '0';
     SRAM_LB_N <= '1' when byte_m='1' and address(0)='1' else '0';
     SRAM_UB_N <= '1' when byte_m='1' and address(0)='0' else '0';
-    SRAM_WE_N <= '0' when estado=wini else '1';
+    SRAM_WE_N <= '0' when estado=w else '1';
     
     --SRAM_DQ <= dq;
     
     --dataReaded <= dr;
-    SRAM_DQ(15 downto 8) <= "ZZZZZZZZ" when estado/=wini else
+    SRAM_DQ(15 downto 8) <= "ZZZZZZZZ" when estado/=w else
                             "ZZZZZZZZ" when byte_m='1' and address(0)='0' else
                             dataToWrite(7 downto 0) when byte_m='1' else
                             dataToWrite(15 downto 8);
     
-    SRAM_DQ(7 downto 0) <=  "ZZZZZZZZ" when estado/=wini  else
+    SRAM_DQ(7 downto 0) <=  "ZZZZZZZZ" when estado/=w  else
                             "ZZZZZZZZ" when byte_m='1' and address(0)='1' else
                             dataToWrite(7 downto 0);
     
